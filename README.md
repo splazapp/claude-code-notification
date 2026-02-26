@@ -1,4 +1,4 @@
-# ClaudeCode Tap
+# ClaudeCodeNotification
 
 macOS desktop notifications for [Claude Code](https://docs.anthropic.com/en/docs/claude-code) with **click-to-return** — tap the notification to jump back to the exact terminal or editor where you started.
 
@@ -11,99 +11,80 @@ macOS desktop notifications for [Claude Code](https://docs.anthropic.com/en/docs
 - **Smart source detection** — automatically identifies which app launched Claude Code via `__CFBundleIdentifier` and `TERM_PROGRAM`
 - **Prompt summary** — notification body shows a truncated preview of your prompt + elapsed time
 - **Three hook events** — `UserPromptSubmit` (start timer), `Stop` (send result notification), `Notification` (permission/action alerts)
-- **Zero dependencies** — pure Bash + Swift, uses only macOS built-in tools (`plutil`, `codesign`, `swiftc`)
+- **Zero dependencies** — pure Bash + Swift, uses only macOS built-in tools
 - **No Dock icon** — runs as an `LSUIElement` accessory app, invisible in Dock and Cmd+Tab
 
 ## How It Works
 
 ```
-┌─────────────┐    hook JSON     ┌──────────────────┐    open -n    ┌──────────────────┐
-│ Claude Code  │ ──────────────> │ claudecode-tap.sh │ ──────────> │ ClaudeCodeTap.app │
-│   (CLI)      │  stdin          │   (Bash router)   │             │  (Swift notifier) │
-└─────────────┘                  └──────────────────┘             └────────┬─────────┘
-                                                                           │ click
-                                                                           ▼
-                                                                  NSWorkspace.shared
-                                                                  .openApplication(bundleID)
-                                                                           │
-                                                                           ▼
-                                                                  ┌─────────────────┐
-                                                                  │ iTerm2 / VSCode  │
-                                                                  │ Cursor / Terminal│
-                                                                  └─────────────────┘
+┌─────────────┐    hook JSON     ┌───────────────────────────┐    open -n    ┌───────────────────────────┐
+│ Claude Code  │ ──────────────> │ claudecode-notification.sh │ ──────────> │ ClaudeCodeNotification.app │
+│   (CLI)      │  stdin          │      (Bash router)         │             │    (Swift notifier)        │
+└─────────────┘                  └───────────────────────────┘             └────────────┬──────────────┘
+                                                                                        │ click
+                                                                                        ▼
+                                                                               NSWorkspace.shared
+                                                                               .openApplication(bundleID)
+                                                                                        │
+                                                                                        ▼
+                                                                               ┌─────────────────┐
+                                                                               │ iTerm2 / VSCode  │
+                                                                               │ Cursor / Terminal│
+                                                                               └─────────────────┘
 ```
 
-1. **`claudecode-tap.sh`** — registered as a Claude Code hook, receives JSON via stdin, tracks session state in `/tmp/claudecode-tap/`
-2. **`ClaudeCodeTap.app`** — a minimal `.app` bundle wrapping a Swift binary that sends a `UNNotificationRequest` and listens for click callbacks
+1. **`claudecode-notification.sh`** — registered as a Claude Code hook, receives JSON via stdin, tracks session state in `/tmp/claudecode-notification/`
+2. **`ClaudeCodeNotification.app`** — a minimal `.app` bundle wrapping a Swift binary that sends a `UNNotificationRequest` and listens for click callbacks
 3. On click, the app activates the originating terminal/editor via `NSWorkspace` using the detected bundle ID
 
 ## Installation
 
-### 1. Clone & build
+### Option A: Download Release (Recommended)
+
+1. Download `ClaudeCodeNotification.zip` from [Releases](https://github.com/splazapp/claude-code-notification/releases)
+2. Extract and place `ClaudeCodeNotification.app` in the repo directory
+3. Run the installer:
 
 ```bash
-git clone https://github.com/user/claude-code-tap.git
-cd claude-code-tap
+git clone https://github.com/splazapp/claude-code-notification.git
+cd claude-code-notification
+# Place the downloaded ClaudeCodeNotification.app here or in dist/
 bash install.sh
 ```
 
-### 2. Install to Claude Code
+### Option B: Build from Source
 
-Copy files to Claude Code's config directory:
+Requires Xcode Command Line Tools (`xcode-select --install`).
 
 ```bash
-mkdir -p ~/.claude/claudecode-tap
-cp claudecode-tap.sh notifier.swift install.sh AppIcon.png ~/.claude/claudecode-tap/
-cp -r ClaudeCodeTap.app ~/.claude/claudecode-tap/
-chmod +x ~/.claude/claudecode-tap/claudecode-tap.sh
+git clone https://github.com/splazapp/claude-code-notification.git
+cd claude-code-notification
+bash install.sh   # auto-detects no .app → builds from source → installs
 ```
 
-### 3. Register hooks
+The installer will:
+- Compile a universal binary (arm64 + x86_64)
+- Build the `.app` bundle
+- Copy files to `~/.claude/claudecode-notification/`
+- Register hooks in `~/.claude/settings.json`
 
-Add the following to `~/.claude/settings.json` (create if it doesn't exist):
+### Grant Notification Permission
 
-```json
-{
-  "hooks": {
-    "UserPromptSubmit": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "/Users/YOUR_USERNAME/.claude/claudecode-tap/claudecode-tap.sh UserPromptSubmit"
-          }
-        ]
-      }
-    ],
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "/Users/YOUR_USERNAME/.claude/claudecode-tap/claudecode-tap.sh Stop"
-          }
-        ]
-      }
-    ],
-    "Notification": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "/Users/YOUR_USERNAME/.claude/claudecode-tap/claudecode-tap.sh Notification"
-          }
-        ]
-      }
-    ]
-  }
-}
+On first run, macOS will prompt you to allow notifications for **ClaudeCodeNotification**. Click **Allow**.
+
+## Developer Guide
+
+### Build only (without installing)
+
+```bash
+bash build.sh                                    # ad-hoc signed
+bash build.sh --sign "Developer ID Application: Your Name (TEAMID)"  # Developer ID
+bash build.sh --sign "Developer ID ..." --notarize                    # + notarization
 ```
 
-Replace `YOUR_USERNAME` with your macOS username.
-
-### 4. Grant notification permission
-
-On first run, macOS will prompt you to allow notifications for **ClaudeCode Tap**. Click **Allow**.
+Output goes to `dist/`:
+- `dist/ClaudeCodeNotification.app`
+- `dist/ClaudeCodeNotification.zip`
 
 ## Supported Terminals & Editors
 
@@ -120,22 +101,22 @@ Other apps are supported if they set the `__CFBundleIdentifier` environment vari
 ## Project Structure
 
 ```
-claude-code-tap/
-├── claudecode-tap.sh   # Bash hook handler — routes events, tracks state
-├── notifier.swift      # Swift notification sender with click callback
-├── install.sh          # Build script — compiles Swift, creates .app bundle
-├── AppIcon.png         # App icon for notifications
-└── ClaudeCodeTap.app/  # Built .app bundle (generated by install.sh)
-    └── Contents/
-        ├── Info.plist
-        ├── MacOS/claudecode-tap
-        └── Resources/AppIcon.png
+claude-code-notification/
+├── claudecode-notification.sh   # Bash hook handler — routes events, tracks state
+├── notifier.swift               # Swift notification sender with click callback
+├── build.sh                     # Developer build script — universal binary + .app
+├── install.sh                   # User install script — build (if needed) + deploy + hook config
+├── AppIcon.png                  # App icon for notifications
+├── .gitignore                   # Ignores dist/ and *.app
+└── dist/                        # Build output (gitignored)
+    ├── ClaudeCodeNotification.app/
+    └── ClaudeCodeNotification.zip
 ```
 
 ## Requirements
 
 - macOS 13+ (Ventura or later)
-- Xcode Command Line Tools (`xcode-select --install`)
+- Xcode Command Line Tools (for building from source)
 - Claude Code CLI
 
 ## License
@@ -144,7 +125,7 @@ MIT
 
 ---
 
-# ClaudeCode Tap 中文说明
+# ClaudeCodeNotification 中文说明
 
 为 [Claude Code](https://docs.anthropic.com/en/docs/claude-code) 提供 macOS 原生桌面通知，支持**点击跳回** — 点击通知自动切换回你启动 Claude Code 的终端或编辑器窗口。
 
@@ -158,57 +139,54 @@ MIT
 - **零依赖** — 纯 Bash + Swift，仅使用 macOS 自带工具
 - **无 Dock 图标** — 以 `LSUIElement` 辅助应用运行，不出现在 Dock 和 Cmd+Tab 中
 
-## 工作原理
-
-1. **`claudecode-tap.sh`** — 注册为 Claude Code Hook，通过 stdin 接收 JSON，在 `/tmp/claudecode-tap/` 跟踪会话状态
-2. **`ClaudeCodeTap.app`** — 最小化 `.app` Bundle，内含 Swift 二进制，发送 `UNNotificationRequest` 并监听点击回调
-3. 点击通知时，通过 `NSWorkspace` 使用检测到的 Bundle ID 激活来源应用
-
 ## 安装
 
-### 1. 克隆并编译
+### 方式 A：下载预编译版（推荐）
+
+1. 从 [Releases](https://github.com/splazapp/claude-code-notification/releases) 下载 `ClaudeCodeNotification.zip`
+2. 解压后将 `ClaudeCodeNotification.app` 放入仓库目录
+3. 运行安装脚本：
 
 ```bash
-git clone https://github.com/user/claude-code-tap.git
-cd claude-code-tap
+git clone https://github.com/splazapp/claude-code-notification.git
+cd claude-code-notification
 bash install.sh
 ```
 
-### 2. 安装到 Claude Code
+### 方式 B：从源码编译
+
+需要 Xcode 命令行工具（`xcode-select --install`）。
 
 ```bash
-mkdir -p ~/.claude/claudecode-tap
-cp claudecode-tap.sh notifier.swift install.sh AppIcon.png ~/.claude/claudecode-tap/
-cp -r ClaudeCodeTap.app ~/.claude/claudecode-tap/
-chmod +x ~/.claude/claudecode-tap/claudecode-tap.sh
+git clone https://github.com/splazapp/claude-code-notification.git
+cd claude-code-notification
+bash install.sh   # 自动检测无 .app → 从源码编译 → 安装
 ```
 
-### 3. 注册 Hooks
+安装脚本会自动：
+- 编译 Universal Binary（arm64 + x86_64）
+- 构建 `.app` Bundle
+- 复制文件到 `~/.claude/claudecode-notification/`
+- 注册 Hooks 到 `~/.claude/settings.json`
 
-在 `~/.claude/settings.json` 中添加（将 `YOUR_USERNAME` 替换为你的 macOS 用户名）：
-
-```json
-{
-  "hooks": {
-    "UserPromptSubmit": [
-      { "hooks": [{ "type": "command", "command": "/Users/YOUR_USERNAME/.claude/claudecode-tap/claudecode-tap.sh UserPromptSubmit" }] }
-    ],
-    "Stop": [
-      { "hooks": [{ "type": "command", "command": "/Users/YOUR_USERNAME/.claude/claudecode-tap/claudecode-tap.sh Stop" }] }
-    ],
-    "Notification": [
-      { "hooks": [{ "type": "command", "command": "/Users/YOUR_USERNAME/.claude/claudecode-tap/claudecode-tap.sh Notification" }] }
-    ]
-  }
-}
-```
-
-### 4. 授予通知权限
+### 授予通知权限
 
 首次运行时 macOS 会弹出通知权限请求，点击**允许**即可。
+
+## 开发者说明
+
+### 仅构建（不安装）
+
+```bash
+bash build.sh                                    # ad-hoc 签名
+bash build.sh --sign "Developer ID Application: 名称 (TEAMID)"  # Developer ID 签名
+bash build.sh --sign "Developer ID ..." --notarize               # + 公证
+```
+
+产物输出到 `dist/` 目录。
 
 ## 系统要求
 
 - macOS 13+（Ventura 或更高版本）
-- Xcode 命令行工具（`xcode-select --install`）
+- Xcode 命令行工具（从源码编译时需要）
 - Claude Code CLI

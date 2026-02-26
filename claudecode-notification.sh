@@ -1,10 +1,10 @@
 #!/bin/bash
-# ClaudeCode Tap - 纯 sh 精简版：智能跳转通知
+# ClaudeCodeNotification - 纯 sh 精简版：智能跳转通知
 # 点击通知自动跳回启动 Claude Code 的应用窗口
 
-STATE_DIR="/tmp/claudecode-tap"
+STATE_DIR="/tmp/claudecode-notification"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-NOTIFIER_APP="$SCRIPT_DIR/ClaudeCodeTap.app/Contents/MacOS/claudecode-tap"
+NOTIFIER_APP="$SCRIPT_DIR/ClaudeCodeNotification.app/Contents/MacOS/claudecode-notification"
 
 # ─── JSON 解析（plutil macOS 自带）───
 json_get() { echo "$INPUT" | plutil -extract "$1" raw -o - -- - 2>/dev/null; }
@@ -39,7 +39,7 @@ format_duration() {
 # ─── 发送通知（Swift 工具支持点击跳回）───
 send_notification() {
     local title="$1" subtitle="$2" bundle_id="$3"
-    local app_bundle="$SCRIPT_DIR/ClaudeCodeTap.app"
+    local app_bundle="$SCRIPT_DIR/ClaudeCodeNotification.app"
     if [ -d "$app_bundle" ]; then
         # Must use 'open' to launch through LaunchServices for proper bundle context
         local activate_args=""

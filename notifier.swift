@@ -29,10 +29,10 @@ class NotifierDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCente
 
         center.requestAuthorization(options: [.alert, .sound]) { granted, error in
             if let error = error {
-                NSLog("ClaudeCodeTap: authorization error: \(error)")
+                NSLog("ClaudeCodeNotification: authorization error: \(error)")
             }
             if !granted {
-                NSLog("ClaudeCodeTap: notification permission not granted, attempting anyway")
+                NSLog("ClaudeCodeNotification: notification permission not granted, attempting anyway")
             }
             // Always try to send — sometimes works even without explicit grant
             DispatchQueue.main.async {
@@ -60,7 +60,7 @@ class NotifierDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCente
 
         center.add(request) { error in
             if let error = error {
-                NSLog("ClaudeCodeTap: failed to send notification: \(error)")
+                NSLog("ClaudeCodeNotification: failed to send notification: \(error)")
                 DispatchQueue.main.async {
                     NSApplication.shared.terminate(nil)
                 }
