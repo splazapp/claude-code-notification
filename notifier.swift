@@ -6,6 +6,7 @@ import UserNotifications
 var titleText = "Claude Code"
 var subtitleText = ""
 var activateBundleID: String?
+var activatePID: pid_t?
 
 var args = CommandLine.arguments.dropFirst()
 while let arg = args.popFirst() {
@@ -13,6 +14,10 @@ while let arg = args.popFirst() {
     case "--title":    titleText = args.popFirst() ?? titleText
     case "--subtitle": subtitleText = args.popFirst() ?? subtitleText
     case "--activate": activateBundleID = args.popFirst()
+    case "--pid":
+        if let pidStr = args.popFirst(), let pid = Int32(pidStr) {
+            activatePID = pid
+        }
     default: break
     }
 }
@@ -21,6 +26,7 @@ while let arg = args.popFirst() {
 
 class NotifierDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDelegate {
     let bundleID = activateBundleID
+    let pid = activatePID
     var timeoutTimer: Timer?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -75,7 +81,15 @@ class NotifierDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCente
         didReceive response: UNNotificationResponse,
         withCompletionHandler completionHandler: @escaping () -> Void
     ) {
-        if let bid = bundleID,
+        var activated = false
+        if let p = pid {
+            let app = NSRunningApplication(processIdentifier: p)
+            if let app = app, !app.isTerminated {
+                app.activate()
+                activated = true
+            }
+        }
+        if !activated, let bid = bundleID,
            let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bid) {
             let config = NSWorkspace.OpenConfiguration()
             config.activates = true

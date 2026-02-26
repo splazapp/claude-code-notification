@@ -54,11 +54,34 @@ No more tab-watching. Fire off a task, go do something else, and let the notific
 
 ## Installation
 
-### Option A: Download Release (Recommended)
+### Option A: One-Line Install (Recommended)
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/splazapp/claude-code-notification/main/install-remote.sh | bash
+```
+
+This downloads the latest release, installs the app, and configures Claude Code hooks — all in one command.
+
+<details>
+<summary>Review the script before running</summary>
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/splazapp/claude-code-notification/main/install-remote.sh | less
+# Then run it if you're satisfied:
+curl -fsSL https://raw.githubusercontent.com/splazapp/claude-code-notification/main/install-remote.sh | bash
+```
+</details>
+
+To install a specific version:
+
+```bash
+VERSION=v2.0 curl -fsSL https://raw.githubusercontent.com/splazapp/claude-code-notification/main/install-remote.sh | bash
+```
+
+### Option B: Clone + Install
 
 1. Download `ClaudeCodeNotification.zip` from [Releases](https://github.com/splazapp/claude-code-notification/releases)
-2. Extract and place `ClaudeCodeNotification.app` in the repo directory
-3. Run the installer:
+2. Clone, extract, and run the installer:
 
 ```bash
 git clone https://github.com/splazapp/claude-code-notification.git
@@ -67,7 +90,7 @@ cd claude-code-notification
 bash install.sh
 ```
 
-### Option B: Build from Source
+### Option C: Build from Source
 
 Requires Xcode Command Line Tools (`xcode-select --install`).
 
@@ -120,7 +143,8 @@ claude-code-notification/
 ├── claudecode-notification.sh   # Bash hook handler — routes events, tracks state
 ├── notifier.swift               # Swift notification sender with click callback
 ├── build.sh                     # Developer build script — universal binary + .app
-├── install.sh                   # User install script — build (if needed) + deploy + hook config
+├── install.sh                   # Local install script — build (if needed) + deploy + hook config
+├── install-remote.sh            # Remote one-line installer — curl | bash
 ├── AppIcon.png                  # App icon for notifications
 ├── .gitignore                   # Ignores dist/ and *.app
 └── dist/                        # Build output (gitignored)
@@ -171,19 +195,43 @@ Claude Code 没有内置的完成通知机制。你只能：
 
 ## 安装
 
-### 方式 A：下载预编译版（推荐）
+### 方式 A：一键安装（推荐）
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/splazapp/claude-code-notification/main/install-remote.sh | bash
+```
+
+自动下载最新版本、安装应用、配置 Claude Code hooks，一行搞定。
+
+<details>
+<summary>运行前先审查脚本</summary>
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/splazapp/claude-code-notification/main/install-remote.sh | less
+# 确认没问题后再执行：
+curl -fsSL https://raw.githubusercontent.com/splazapp/claude-code-notification/main/install-remote.sh | bash
+```
+</details>
+
+指定版本安装：
+
+```bash
+VERSION=v2.0 curl -fsSL https://raw.githubusercontent.com/splazapp/claude-code-notification/main/install-remote.sh | bash
+```
+
+### 方式 B：Clone + 安装
 
 1. 从 [Releases](https://github.com/splazapp/claude-code-notification/releases) 下载 `ClaudeCodeNotification.zip`
-2. 解压后将 `ClaudeCodeNotification.app` 放入仓库目录
-3. 运行安装脚本：
+2. Clone 仓库，解压，运行安装脚本：
 
 ```bash
 git clone https://github.com/splazapp/claude-code-notification.git
 cd claude-code-notification
+# 将下载的 ClaudeCodeNotification.app 放入当前目录或 dist/
 bash install.sh
 ```
 
-### 方式 B：从源码编译
+### 方式 C：从源码编译
 
 需要 Xcode 命令行工具（`xcode-select --install`）。
 

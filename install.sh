@@ -1,6 +1,7 @@
 #!/bin/bash
-# ClaudeCodeNotification — Install Script
+# ClaudeCodeNotification — Local Install Script
 # Installs prebuilt .app or builds from source, then configures Claude Code hooks
+# For one-line remote install, use: curl -fsSL https://raw.githubusercontent.com/splazapp/claude-code-notification/main/install-remote.sh | bash
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
