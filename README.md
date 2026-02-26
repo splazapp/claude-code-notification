@@ -1,8 +1,23 @@
 # ClaudeCodeNotification
 
-macOS desktop notifications for [Claude Code](https://docs.anthropic.com/en/docs/claude-code) with **click-to-return** — tap the notification to jump back to the exact terminal or editor where you started.
+> **Stop babysitting Claude Code.** Get notified when it's done, click to jump back.
 
 ![macOS](https://img.shields.io/badge/macOS-13%2B-blue) ![Swift](https://img.shields.io/badge/Swift-5.9%2B-orange) ![License](https://img.shields.io/badge/license-MIT-green)
+
+## The Problem
+
+Claude Code tasks often take minutes — sometimes much longer. While it's working, you switch to a browser, check docs, grab coffee... then find yourself constantly flipping back to check: *"Is it done yet?"*
+
+There's no built-in way to know when Claude Code finishes. You either:
+- **Stare at the terminal** and waste time waiting
+- **Context-switch away** and forget to come back, losing momentum
+- **Keep checking back** every 30 seconds like watching a pot boil
+
+## The Solution
+
+**ClaudeCodeNotification** sends a native macOS notification the moment Claude Code completes a task. One click on the notification takes you straight back to the exact terminal or editor window — iTerm2, VS Code, Cursor, or whatever you launched it from.
+
+No more tab-watching. Fire off a task, go do something else, and let the notification bring you back.
 
 ## Features
 
@@ -127,7 +142,22 @@ MIT
 
 # ClaudeCodeNotification 中文说明
 
-为 [Claude Code](https://docs.anthropic.com/en/docs/claude-code) 提供 macOS 原生桌面通知，支持**点击跳回** — 点击通知自动切换回你启动 Claude Code 的终端或编辑器窗口。
+> **别再盯着 Claude Code 等它跑完了。** 任务完成自动通知，点一下跳回去。
+
+## 解决什么问题
+
+Claude Code 的任务经常要跑几分钟甚至更久。等它执行的时候，你切去看文档、刷网页、倒杯水……然后就开始反复切回来看：*"跑完了没？"*
+
+Claude Code 没有内置的完成通知机制。你只能：
+- **盯着终端干等** — 浪费时间
+- **切走做别的事** — 然后忘了回来，打断工作节奏
+- **每隔 30 秒切回来看一眼** — 像盯盘一样
+
+## 解决方案
+
+**ClaudeCodeNotification** 在 Claude Code 完成任务的瞬间发送 macOS 原生通知。点击通知一键跳回到你启动它的那个窗口 — 无论是 iTerm2、VS Code、Cursor 还是其他终端。
+
+不用再盯盘了。发出任务，去做别的事，让通知把你拉回来。
 
 ## 功能特性
 
