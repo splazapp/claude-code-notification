@@ -119,6 +119,18 @@ The installer will:
 
 On first run, macOS will prompt you to allow notifications for **ClaudeCodeNotification**. Click **Allow**.
 
+## Uninstall
+
+```bash
+git clone https://github.com/splazapp/claude-code-notification.git
+cd claude-code-notification
+bash uninstall.sh
+```
+
+This removes the install directory and cleans up the Claude Code hooks. You'll be asked to confirm before anything is deleted.
+
+To also remove the notification permission: **System Settings → Notifications → ClaudeCodeNotification → Remove**
+
 ## Developer Guide
 
 ### Build only (without installing)
@@ -268,6 +280,18 @@ bash install.sh   # 自动检测无 .app → 从源码编译 → 安装
 ### 授予通知权限
 
 首次运行时 macOS 会弹出通知权限请求，点击**允许**即可。
+
+## 卸载
+
+```bash
+git clone https://github.com/splazapp/claude-code-notification.git
+cd claude-code-notification
+bash uninstall.sh
+```
+
+会删除安装目录并清理 Claude Code hooks，执行前会要求确认。
+
+若要同时移除通知权限：**系统设置 → 通知 → ClaudeCodeNotification → 移除**
 
 ## 开发者说明
 
