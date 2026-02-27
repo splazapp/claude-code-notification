@@ -122,7 +122,8 @@ fi
 
 # ─── Code sign ───
 echo "==> Code signing (identity: $SIGN_IDENTITY) …"
-codesign --force --deep --sign "$SIGN_IDENTITY" "$APP_DIR"
+# --options runtime enables Hardened Runtime, required for notarization
+codesign --force --deep --sign "$SIGN_IDENTITY" --options runtime "$APP_DIR"
 
 # ─── Notarize (optional) ───
 if $DO_NOTARIZE; then
@@ -131,13 +132,19 @@ if $DO_NOTARIZE; then
     ditto -c -k --keepParent "$APP_DIR" "$ZIP_PATH"
     echo "==> Submitting for notarization …"
     if [ -n "${NOTARIZE_APPLE_ID:-}" ]; then
-        xcrun notarytool submit "$ZIP_PATH" \
+        NOTARIZE_OUTPUT=$(xcrun notarytool submit "$ZIP_PATH" \
             --apple-id "$NOTARIZE_APPLE_ID" \
             --password "$NOTARIZE_APPLE_ID_PASSWORD" \
             --team-id  "$NOTARIZE_TEAM_ID" \
-            --wait
+            --wait 2>&1)
     else
-        xcrun notarytool submit "$ZIP_PATH" --keychain-profile "notarytool" --wait
+        NOTARIZE_OUTPUT=$(xcrun notarytool submit "$ZIP_PATH" \
+            --keychain-profile "notarytool" --wait 2>&1)
+    fi
+    echo "$NOTARIZE_OUTPUT"
+    if ! echo "$NOTARIZE_OUTPUT" | grep -q "status: Accepted"; then
+        echo "Error: Notarization failed (not Accepted)" >&2
+        exit 1
     fi
     echo "==> Stapling …"
     xcrun stapler staple "$APP_DIR"
