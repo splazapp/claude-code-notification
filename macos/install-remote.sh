@@ -70,9 +70,9 @@ curl -fSL "$ZIP_URL" -o "$TMPDIR_INSTALL/$APP_NAME.zip" || fail "Failed to downl
 
 # 2. Download hook script from main branch (or tagged version)
 if [ "$TAG" = "latest" ]; then
-    SCRIPT_URL="https://raw.githubusercontent.com/$REPO/main/$HOOK_SCRIPT"
+    SCRIPT_URL="https://raw.githubusercontent.com/$REPO/main/macos/$HOOK_SCRIPT"
 else
-    SCRIPT_URL="https://raw.githubusercontent.com/$REPO/$TAG/$HOOK_SCRIPT"
+    SCRIPT_URL="https://raw.githubusercontent.com/$REPO/$TAG/macos/$HOOK_SCRIPT"
 fi
 
 info "Fetching $HOOK_SCRIPT …"

@@ -2,7 +2,7 @@
 
 > **Stop babysitting Claude Code.** Get notified when it's done, click to jump back.
 
-![macOS](https://img.shields.io/badge/macOS-13%2B-blue) ![Swift](https://img.shields.io/badge/Swift-5.9%2B-orange) ![License](https://img.shields.io/badge/license-MIT-green)
+![macOS](https://img.shields.io/badge/macOS-13%2B-blue) ![Windows](https://img.shields.io/badge/Windows-10%2B-blue) ![Swift](https://img.shields.io/badge/Swift-5.9%2B-orange) ![CSharp](https://img.shields.io/badge/C%23-.NET%208-purple) ![License](https://img.shields.io/badge/license-MIT-green)
 
 ## The Problem
 
@@ -15,19 +15,19 @@ There's no built-in way to know when Claude Code finishes. You either:
 
 ## The Solution
 
-**ClaudeCodeNotification** sends a native macOS notification the moment Claude Code completes a task. One click on the notification takes you straight back to the exact terminal or editor window — iTerm2, VS Code, Cursor, or whatever you launched it from.
+**ClaudeCodeNotification** sends a native notification the moment Claude Code completes a task. One click on the notification takes you straight back to the exact terminal or editor window — iTerm2, VS Code, Cursor, Windows Terminal, or whatever you launched it from.
 
 No more tab-watching. Fire off a task, go do something else, and let the notification bring you back.
 
 ## Features
 
-- **Native macOS notifications** — built with `UserNotifications` framework, not `osascript` hacks
-- **Click to return** — tap a notification to activate the originating app (iTerm2, VS Code, Cursor, Terminal, Warp)
-- **Smart source detection** — automatically identifies which app launched Claude Code via `__CFBundleIdentifier` and `TERM_PROGRAM`
+- **Native notifications** — macOS: `UserNotifications` framework; Windows: WinRT Toast Notifications
+- **Click to return** — tap a notification to activate the originating app (iTerm2, VS Code, Cursor, Terminal, Warp, Windows Terminal)
+- **Smart source detection** — macOS: `__CFBundleIdentifier` / `TERM_PROGRAM`; Windows: HWND-based precise window targeting
 - **Prompt summary** — notification body shows a truncated preview of your prompt + elapsed time
 - **Three hook events** — `UserPromptSubmit` (start timer), `Stop` (send result notification), `Notification` (permission/action alerts)
-- **Zero dependencies** — pure Bash + Swift, uses only macOS built-in tools
-- **No Dock icon** — runs as an `LSUIElement` accessory app, invisible in Dock and Cmd+Tab
+- **Minimal dependencies** — macOS: pure Bash + Swift; Windows: PowerShell + C# (.NET 8, self-contained exe)
+- **No Dock icon / console window** — runs invisibly in the background
 
 ## How It Works
 
@@ -54,6 +54,8 @@ No more tab-watching. Fire off a task, go do something else, and let the notific
 
 ## Installation
 
+> **Platform support:** macOS instructions below. Jump to [Windows Installation](#windows-installation) for Windows.
+
 ### Option A: Homebrew (Recommended)
 
 ```bash
@@ -66,7 +68,7 @@ Builds from source, installs the app, then `claudecode-notification-setup` regis
 ### Option B: One-Line Install
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/splazapp/claude-code-notification/main/install-remote.sh | bash
+curl -fsSL https://raw.githubusercontent.com/splazapp/claude-code-notification/main/macos/install-remote.sh | bash
 ```
 
 This downloads the latest release, installs the app, and configures Claude Code hooks — all in one command.
@@ -75,16 +77,16 @@ This downloads the latest release, installs the app, and configures Claude Code 
 <summary>Review the script before running</summary>
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/splazapp/claude-code-notification/main/install-remote.sh | less
+curl -fsSL https://raw.githubusercontent.com/splazapp/claude-code-notification/main/macos/install-remote.sh | less
 # Then run it if you're satisfied:
-curl -fsSL https://raw.githubusercontent.com/splazapp/claude-code-notification/main/install-remote.sh | bash
+curl -fsSL https://raw.githubusercontent.com/splazapp/claude-code-notification/main/macos/install-remote.sh | bash
 ```
 </details>
 
 To install a specific version:
 
 ```bash
-VERSION=v2.0 curl -fsSL https://raw.githubusercontent.com/splazapp/claude-code-notification/main/install-remote.sh | bash
+VERSION=v2.0 curl -fsSL https://raw.githubusercontent.com/splazapp/claude-code-notification/main/macos/install-remote.sh | bash
 ```
 
 ### Option C: Clone + Install
@@ -94,7 +96,7 @@ VERSION=v2.0 curl -fsSL https://raw.githubusercontent.com/splazapp/claude-code-n
 
 ```bash
 git clone https://github.com/splazapp/claude-code-notification.git
-cd claude-code-notification
+cd claude-code-notification/macos
 # Place the downloaded ClaudeCodeNotification.app here or in dist/
 bash install.sh
 ```
@@ -105,7 +107,7 @@ Requires Xcode Command Line Tools (`xcode-select --install`).
 
 ```bash
 git clone https://github.com/splazapp/claude-code-notification.git
-cd claude-code-notification
+cd claude-code-notification/macos
 bash install.sh   # auto-detects no .app → builds from source → installs
 ```
 
@@ -119,11 +121,11 @@ The installer will:
 
 On first run, macOS will prompt you to allow notifications for **ClaudeCodeNotification**. Click **Allow**.
 
-## Uninstall
+## Uninstall (macOS)
 
 ```bash
 git clone https://github.com/splazapp/claude-code-notification.git
-cd claude-code-notification
+cd claude-code-notification/macos
 bash uninstall.sh
 ```
 
@@ -131,19 +133,84 @@ This removes the install directory and cleans up the Claude Code hooks. You'll b
 
 To also remove the notification permission: **System Settings → Notifications → ClaudeCodeNotification → Remove**
 
+---
+
+## Windows Installation
+
+> **Requirements:** Windows 10 version 1809 (build 17763) or later, PowerShell 5.1+, Node.js (included with Claude Code)
+
+### Step 1: Clone the repository
+
+```powershell
+git clone https://github.com/splazapp/claude-code-notification.git
+cd claude-code-notification\windows
+```
+
+### Step 2: Install (build from source)
+
+```powershell
+.\install.ps1
+```
+
+The installer will:
+- Build `claudecode-notification.exe` from C# source (requires [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0))
+- Copy files to `%APPDATA%\claudecode-notification\`
+- Register the Toast AUMID in the registry
+- Configure hooks in `%USERPROFILE%\.claude\settings.json`
+
+### Step 2 (alternative): Build separately, then install
+
+```powershell
+# Build first (requires .NET 8 SDK)
+.\build.ps1
+
+# Then install (no SDK required at install time)
+.\install.ps1
+```
+
+### Step 3: Enable notifications
+
+On first notification, Windows may prompt to allow notifications. If none appear:
+
+**Settings → System → Notifications → ClaudeCodeNotification → Turn on**
+
+### Uninstall (Windows)
+
+```powershell
+cd claude-code-notification\windows
+.\uninstall.ps1
+```
+
+Removes the install directory, registry AUMID, and Claude Code hooks.
+
+## Supported Terminals & Editors (Windows)
+
+| App | Detection Method |
+|-----|-----------------|
+| Windows Terminal | Process name `WindowsTerminal` → `MainWindowHandle` |
+| VS Code | Process name `Code` → `MainWindowHandle` |
+| Cursor | Process name `cursor` → `MainWindowHandle` |
+| PowerShell 7 | Process name `pwsh` → `MainWindowHandle` |
+| Windows PowerShell | Process name `powershell` → `MainWindowHandle` |
+| Command Prompt | Process name `cmd` → `MainWindowHandle` |
+| Alacritty / WezTerm | Process name matching → `MainWindowHandle` |
+
+Window identification uses stable HWND values (not titles), so it works correctly even when the window title changes during task execution.
+
 ## Developer Guide
 
 ### Build only (without installing)
 
 ```bash
+cd macos
 bash build.sh                                    # ad-hoc signed
 bash build.sh --sign "Developer ID Application: Your Name (TEAMID)"  # Developer ID
 bash build.sh --sign "Developer ID ..." --notarize                    # + notarization
 ```
 
-Output goes to `dist/`:
-- `dist/ClaudeCodeNotification.app`
-- `dist/ClaudeCodeNotification.zip`
+Output goes to `macos/dist/`:
+- `macos/dist/ClaudeCodeNotification.app`
+- `macos/dist/ClaudeCodeNotification.zip`
 
 ## Supported Terminals & Editors
 
@@ -161,23 +228,40 @@ Other apps are supported if they set the `__CFBundleIdentifier` environment vari
 
 ```
 claude-code-notification/
-├── claudecode-notification.sh   # Bash hook handler — routes events, tracks state
-├── notifier.swift               # Swift notification sender with click callback
-├── build.sh                     # Developer build script — universal binary + .app
-├── install.sh                   # Local install script — build (if needed) + deploy + hook config
-├── install-remote.sh            # Remote one-line installer — curl | bash
-├── AppIcon.png                  # App icon for notifications
-├── .gitignore                   # Ignores dist/ and *.app
-└── dist/                        # Build output (gitignored)
-    ├── ClaudeCodeNotification.app/
-    └── ClaudeCodeNotification.zip
+├── macos/
+│   ├── claudecode-notification.sh   # Bash hook handler — routes events, tracks state
+│   ├── notifier.swift               # Swift notification sender with click callback
+│   ├── build.sh                     # Developer build script — universal binary + .app
+│   ├── install.sh                   # Local install script
+│   ├── install-remote.sh            # Remote one-line installer — curl | bash
+│   ├── uninstall.sh                 # Uninstall script
+│   ├── AppIcon.png                  # App icon for notifications
+│   └── dist/                        # Build output (gitignored)
+│       ├── ClaudeCodeNotification.app/
+│       └── ClaudeCodeNotification.zip
+└── windows/
+    ├── claudecode-notification.ps1  # PowerShell hook handler
+    ├── Notifier.cs                  # C# Toast notification sender with HWND focus
+    ├── Notifier.csproj              # .NET 8 project file
+    ├── build.ps1                    # Build script (dotnet publish → single exe)
+    ├── install.ps1                  # Install script
+    ├── uninstall.ps1                # Uninstall script
+    └── dist/                        # Build output (gitignored)
+        └── claudecode-notification.exe
 ```
 
 ## Requirements
 
+### macOS
 - macOS 13+ (Ventura or later)
 - Xcode Command Line Tools (for building from source)
 - Claude Code CLI
+
+### Windows
+- Windows 10 version 1809 (build 17763) or later
+- PowerShell 5.1+ (pre-installed on Windows 10)
+- Node.js (included with Claude Code)
+- [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0) (only needed to build from source)
 
 ## License
 
@@ -187,7 +271,7 @@ MIT
 
 # ClaudeCodeNotification 中文说明
 
-> **别再盯着 Claude Code 等它跑完了。** 任务完成自动通知，点一下跳回去。
+> **别再盯着 Claude Code 等它跑完了。** 任务完成自动通知，点一下跳回去。支持 macOS 和 Windows。
 
 ## 解决什么问题
 
@@ -200,19 +284,19 @@ Claude Code 没有内置的完成通知机制。你只能：
 
 ## 解决方案
 
-**ClaudeCodeNotification** 在 Claude Code 完成任务的瞬间发送 macOS 原生通知。点击通知一键跳回到你启动它的那个窗口 — 无论是 iTerm2、VS Code、Cursor 还是其他终端。
+**ClaudeCodeNotification** 在 Claude Code 完成任务的瞬间发送原生系统通知。点击通知一键跳回到你启动它的那个窗口 — 无论是 iTerm2、VS Code、Cursor、Windows Terminal 还是其他终端。
 
 不用再盯盘了。发出任务，去做别的事，让通知把你拉回来。
 
 ## 功能特性
 
-- **原生 macOS 通知** — 基于 `UserNotifications` 框架，非 `osascript` 方案
-- **点击跳回** — 点击通知自动激活来源应用（iTerm2、VS Code、Cursor、Terminal、Warp）
-- **智能来源检测** — 通过 `__CFBundleIdentifier` 和 `TERM_PROGRAM` 自动识别启动 Claude Code 的应用
+- **原生系统通知** — macOS：`UserNotifications` 框架；Windows：WinRT Toast 通知
+- **点击跳回** — 点击通知自动激活来源应用（iTerm2、VS Code、Cursor、Terminal、Warp、Windows Terminal）
+- **精准窗口定位** — macOS：窗口坐标 + AX API；Windows：HWND 句柄（稳定可靠，不受标题变化影响）
 - **Prompt 摘要** — 通知正文显示你的提问摘要（前 40 字符）+ 耗时
 - **三个 Hook 事件** — `UserPromptSubmit`（开始计时）、`Stop`（发送结果通知）、`Notification`（权限/操作提醒）
-- **零依赖** — 纯 Bash + Swift，仅使用 macOS 自带工具
-- **无 Dock 图标** — 以 `LSUIElement` 辅助应用运行，不出现在 Dock 和 Cmd+Tab 中
+- **最小依赖** — macOS：纯 Bash + Swift；Windows：PowerShell + C#（.NET 8 单文件 exe，无需用户安装运行时）
+- **静默运行** — 后台运行，无 Dock 图标、无控制台窗口
 
 ## 安装
 
@@ -228,7 +312,7 @@ claudecode-notification-setup
 ### 方式 B：一键安装
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/splazapp/claude-code-notification/main/install-remote.sh | bash
+curl -fsSL https://raw.githubusercontent.com/splazapp/claude-code-notification/main/macos/install-remote.sh | bash
 ```
 
 自动下载最新版本、安装应用、配置 Claude Code hooks，一行搞定。
@@ -237,16 +321,16 @@ curl -fsSL https://raw.githubusercontent.com/splazapp/claude-code-notification/m
 <summary>运行前先审查脚本</summary>
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/splazapp/claude-code-notification/main/install-remote.sh | less
+curl -fsSL https://raw.githubusercontent.com/splazapp/claude-code-notification/main/macos/install-remote.sh | less
 # 确认没问题后再执行：
-curl -fsSL https://raw.githubusercontent.com/splazapp/claude-code-notification/main/install-remote.sh | bash
+curl -fsSL https://raw.githubusercontent.com/splazapp/claude-code-notification/main/macos/install-remote.sh | bash
 ```
 </details>
 
 指定版本安装：
 
 ```bash
-VERSION=v2.0 curl -fsSL https://raw.githubusercontent.com/splazapp/claude-code-notification/main/install-remote.sh | bash
+VERSION=v2.0 curl -fsSL https://raw.githubusercontent.com/splazapp/claude-code-notification/main/macos/install-remote.sh | bash
 ```
 
 ### 方式 C：Clone + 安装
@@ -256,7 +340,7 @@ VERSION=v2.0 curl -fsSL https://raw.githubusercontent.com/splazapp/claude-code-n
 
 ```bash
 git clone https://github.com/splazapp/claude-code-notification.git
-cd claude-code-notification
+cd claude-code-notification/macos
 # 将下载的 ClaudeCodeNotification.app 放入当前目录或 dist/
 bash install.sh
 ```
@@ -267,7 +351,7 @@ bash install.sh
 
 ```bash
 git clone https://github.com/splazapp/claude-code-notification.git
-cd claude-code-notification
+cd claude-code-notification/macos
 bash install.sh   # 自动检测无 .app → 从源码编译 → 安装
 ```
 
@@ -281,11 +365,11 @@ bash install.sh   # 自动检测无 .app → 从源码编译 → 安装
 
 首次运行时 macOS 会弹出通知权限请求，点击**允许**即可。
 
-## 卸载
+## 卸载（macOS）
 
 ```bash
 git clone https://github.com/splazapp/claude-code-notification.git
-cd claude-code-notification
+cd claude-code-notification/macos
 bash uninstall.sh
 ```
 
@@ -293,20 +377,78 @@ bash uninstall.sh
 
 若要同时移除通知权限：**系统设置 → 通知 → ClaudeCodeNotification → 移除**
 
+---
+
+## Windows 安装
+
+> **系统要求：** Windows 10 1809（build 17763）及以上，PowerShell 5.1+，Node.js（Claude Code 已包含）
+
+### 第一步：Clone 仓库
+
+```powershell
+git clone https://github.com/splazapp/claude-code-notification.git
+cd claude-code-notification\windows
+```
+
+### 第二步：安装
+
+```powershell
+.\install.ps1
+```
+
+安装脚本会自动：
+- 从 C# 源码编译 `claudecode-notification.exe`（需要 [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)）
+- 复制文件到 `%APPDATA%\claudecode-notification\`
+- 注册 Toast AUMID 到注册表
+- 配置 `%USERPROFILE%\.claude\settings.json` 中的 hooks
+
+### 第二步（进阶）：先构建再安装
+
+```powershell
+# 先构建（需要 .NET 8 SDK）
+.\build.ps1
+
+# 再安装（安装时不需要 SDK）
+.\install.ps1
+```
+
+### 第三步：允许通知
+
+首次收到通知时 Windows 可能弹出权限请求。若通知未出现：
+
+**设置 → 系统 → 通知 → ClaudeCodeNotification → 打开**
+
+## 卸载（Windows）
+
+```powershell
+cd claude-code-notification\windows
+.\uninstall.ps1
+```
+
+会删除安装目录、注册表项和 Claude Code hooks，执行前会要求确认。
+
 ## 开发者说明
 
 ### 仅构建（不安装）
 
 ```bash
+cd macos
 bash build.sh                                    # ad-hoc 签名
 bash build.sh --sign "Developer ID Application: 名称 (TEAMID)"  # Developer ID 签名
 bash build.sh --sign "Developer ID ..." --notarize               # + 公证
 ```
 
-产物输出到 `dist/` 目录。
+产物输出到 `macos/dist/` 目录。
 
 ## 系统要求
 
+**macOS：**
 - macOS 13+（Ventura 或更高版本）
 - Xcode 命令行工具（从源码编译时需要）
 - Claude Code CLI
+
+**Windows：**
+- Windows 10 1809（build 17763）及以上
+- PowerShell 5.1+（Windows 10 内置）
+- Node.js（Claude Code 已包含）
+- [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)（仅从源码编译时需要）

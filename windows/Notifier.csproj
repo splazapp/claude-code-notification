@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <!-- Windows 10 1809+ TFM：内置 WinRT 类型，无需额外 NuGet 包 -->
+    <TargetFramework>net8.0-windows10.0.17763.0</TargetFramework>
+    <!-- WinExe：不显示控制台窗口 -->
+    <OutputType>WinExe</OutputType>
+    <AssemblyName>claudecode-notification</AssemblyName>
+    <RootNamespace>ClaudeCodeNotification</RootNamespace>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <!-- 单文件发布：用户无需安装 .NET -->
+    <PublishSingleFile>true</PublishSingleFile>
+    <SelfContained>true</SelfContained>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <!-- 精简体积 -->
+    <PublishTrimmed>true</PublishTrimmed>
+    <TrimMode>partial</TrimMode>
+  </PropertyGroup>
+</Project>
