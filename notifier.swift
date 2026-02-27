@@ -6,17 +6,20 @@ import UserNotifications
 var titleText = "Claude Code"
 var subtitleText = ""
 var activateBundleID: String?
-var activatePID: pid_t?
+var activateWindowPos: (Int, Int)?
 
 var args = CommandLine.arguments.dropFirst()
 while let arg = args.popFirst() {
     switch arg {
-    case "--title":    titleText = args.popFirst() ?? titleText
-    case "--subtitle": subtitleText = args.popFirst() ?? subtitleText
-    case "--activate": activateBundleID = args.popFirst()
-    case "--pid":
-        if let pidStr = args.popFirst(), let pid = Int32(pidStr) {
-            activatePID = pid
+    case "--title":      titleText = args.popFirst() ?? titleText
+    case "--subtitle":   subtitleText = args.popFirst() ?? subtitleText
+    case "--activate":   activateBundleID = args.popFirst()
+    case "--window-pos":
+        if let posStr = args.popFirst() {
+            let parts = posStr.split(separator: ",")
+            if parts.count == 2, let x = Int(parts[0]), let y = Int(parts[1]) {
+                activateWindowPos = (x, y)
+            }
         }
     default: break
     }
@@ -26,7 +29,7 @@ while let arg = args.popFirst() {
 
 class NotifierDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDelegate {
     let bundleID = activateBundleID
-    let pid = activatePID
+    let windowPos = activateWindowPos
     var timeoutTimer: Timer?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -81,24 +84,64 @@ class NotifierDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCente
         didReceive response: UNNotificationResponse,
         withCompletionHandler completionHandler: @escaping () -> Void
     ) {
-        var activated = false
-        if let p = pid {
-            let app = NSRunningApplication(processIdentifier: p)
-            if let app = app, !app.isTerminated {
-                app.activate()
-                activated = true
+        activateTargetWindow()
+        completionHandler()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            NSApplication.shared.terminate(nil)
+        }
+    }
+
+    private func activateTargetWindow() {
+        // Strategy 1: AXRaise window by position (precise window targeting)
+        if let bid = bundleID, let pos = windowPos {
+            if activateByPosition(bundleID: bid, x: pos.0, y: pos.1) {
+                return
             }
         }
-        if !activated, let bid = bundleID,
+        // Strategy 2: Bundle ID activation (app-level fallback)
+        if let bid = bundleID,
            let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bid) {
             let config = NSWorkspace.OpenConfiguration()
             config.activates = true
             NSWorkspace.shared.openApplication(at: url, configuration: config)
         }
-        completionHandler()
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            NSApplication.shared.terminate(nil)
+    }
+
+    private func activateByPosition(bundleID: String, x: Int, y: Int) -> Bool {
+        // Find the app by bundle ID
+        guard let app = NSRunningApplication.runningApplications(
+            withBundleIdentifier: bundleID).first else { return false }
+
+        let pid = app.processIdentifier
+        let axApp = AXUIElementCreateApplication(pid)
+
+        // Get all windows
+        var windowsRef: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(axApp, kAXWindowsAttribute as CFString, &windowsRef) == .success,
+              let windows = windowsRef as? [AXUIElement] else {
+            return false
         }
+
+        // Find window matching the captured position
+        for window in windows {
+            var posRef: CFTypeRef?
+            guard AXUIElementCopyAttributeValue(window, kAXPositionAttribute as CFString, &posRef) == .success else {
+                continue
+            }
+            var point = CGPoint.zero
+            AXValueGetValue(posRef as! AXValue, .cgPoint, &point)
+
+            if Int(point.x) == x && Int(point.y) == y {
+                // Raise this specific window and activate the app
+                AXUIElementPerformAction(window, kAXRaiseAction as CFString)
+                app.activate()
+                return true
+            }
+        }
+
+        // Position didn't match any window — activate app anyway
+        app.activate()
+        return true
     }
 
     // Show notification even when app is in foreground

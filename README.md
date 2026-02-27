@@ -54,7 +54,16 @@ No more tab-watching. Fire off a task, go do something else, and let the notific
 
 ## Installation
 
-### Option A: One-Line Install (Recommended)
+### Option A: Homebrew (Recommended)
+
+```bash
+brew install splazapp/tap/claudecode-notification
+claudecode-notification-setup
+```
+
+Builds from source, installs the app, then `claudecode-notification-setup` registers the Claude Code hooks.
+
+### Option B: One-Line Install
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/splazapp/claude-code-notification/main/install-remote.sh | bash
@@ -78,7 +87,7 @@ To install a specific version:
 VERSION=v2.0 curl -fsSL https://raw.githubusercontent.com/splazapp/claude-code-notification/main/install-remote.sh | bash
 ```
 
-### Option B: Clone + Install
+### Option C: Clone + Install
 
 1. Download `ClaudeCodeNotification.zip` from [Releases](https://github.com/splazapp/claude-code-notification/releases)
 2. Clone, extract, and run the installer:
@@ -90,7 +99,7 @@ cd claude-code-notification
 bash install.sh
 ```
 
-### Option C: Build from Source
+### Option D: Build from Source
 
 Requires Xcode Command Line Tools (`xcode-select --install`).
 
@@ -195,7 +204,16 @@ Claude Code 没有内置的完成通知机制。你只能：
 
 ## 安装
 
-### 方式 A：一键安装（推荐）
+### 方式 A：Homebrew 安装（推荐）
+
+```bash
+brew install splazapp/tap/claudecode-notification
+claudecode-notification-setup
+```
+
+从源码编译安装，然后运行 `claudecode-notification-setup` 注册 Claude Code hooks。
+
+### 方式 B：一键安装
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/splazapp/claude-code-notification/main/install-remote.sh | bash
@@ -219,7 +237,7 @@ curl -fsSL https://raw.githubusercontent.com/splazapp/claude-code-notification/m
 VERSION=v2.0 curl -fsSL https://raw.githubusercontent.com/splazapp/claude-code-notification/main/install-remote.sh | bash
 ```
 
-### 方式 B：Clone + 安装
+### 方式 C：Clone + 安装
 
 1. 从 [Releases](https://github.com/splazapp/claude-code-notification/releases) 下载 `ClaudeCodeNotification.zip`
 2. Clone 仓库，解压，运行安装脚本：
@@ -231,7 +249,7 @@ cd claude-code-notification
 bash install.sh
 ```
 
-### 方式 C：从源码编译
+### 方式 D：从源码编译
 
 需要 Xcode 命令行工具（`xcode-select --install`）。
 

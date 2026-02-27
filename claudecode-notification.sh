@@ -9,20 +9,18 @@ NOTIFIER_APP="$SCRIPT_DIR/ClaudeCodeNotification.app/Contents/MacOS/claudecode-n
 # ─── JSON 解析（plutil macOS 自带）───
 json_get() { echo "$INPUT" | plutil -extract "$1" raw -o - -- - 2>/dev/null; }
 
-# ─── 追溯进程树找到终端应用 PID ───
-find_terminal_pid() {
-    local pid=$$
-    while [ "$pid" -gt 1 ] 2>/dev/null; do
-        local pname
-        pname=$(ps -o comm= -p "$pid" 2>/dev/null) || break
-        case "$pname" in
-            *iTerm2*|*Terminal*|*Cursor*|*Electron*|*Code*|*Warp*)
-                echo "$pid"
-                return
-                ;;
-        esac
-        pid=$(ps -o ppid= -p "$pid" 2>/dev/null | tr -d ' ') || break
-    done
+# ─── 捕获前台窗口位置（用于多窗口定位）───
+# 窗口标题会动态变化（spinner），位置在任务执行期间保持稳定
+capture_window_pos() {
+    osascript -e '
+tell application "System Events"
+    tell (first process whose frontmost is true)
+        if exists window 1 then
+            set p to position of window 1
+            return (item 1 of p as text) & "," & (item 2 of p as text)
+        end if
+    end tell
+end tell' 2>/dev/null
 }
 
 # ─── 智能检测启动应用 Bundle ID ───
@@ -54,14 +52,14 @@ format_duration() {
 
 # ─── 发送通知（Swift 工具支持点击跳回）───
 send_notification() {
-    local title="$1" subtitle="$2" bundle_id="$3" terminal_pid="$4"
+    local title="$1" subtitle="$2" bundle_id="$3" win_pos="$4"
     local app_bundle="$SCRIPT_DIR/ClaudeCodeNotification.app"
     if [ -d "$app_bundle" ]; then
         # Must use 'open' to launch through LaunchServices for proper bundle context
-        local activate_args=""
-        [ -n "$bundle_id" ] && activate_args="--activate $bundle_id"
-        [ -n "$terminal_pid" ] && activate_args="$activate_args --pid $terminal_pid"
-        open -n "$app_bundle" --args --title "$title" --subtitle "$subtitle" $activate_args 2>/dev/null &
+        local -a notify_args=(--title "$title" --subtitle "$subtitle")
+        [ -n "$bundle_id" ] && notify_args+=(--activate "$bundle_id")
+        [ -n "$win_pos" ] && notify_args+=(--window-pos "$win_pos")
+        open -n "$app_bundle" --args "${notify_args[@]}" 2>/dev/null &
         disown
     else
         # Fallback: osascript（无点击回调）
@@ -78,8 +76,9 @@ handle_user_prompt_submit() {
     date +%s > "$STATE_DIR/${session_id}.start"
     echo "$cwd" > "$STATE_DIR/${session_id}.cwd"
     echo "$bundle_id" > "$STATE_DIR/${session_id}.app"
-    local terminal_pid; terminal_pid=$(find_terminal_pid)
-    [ -n "$terminal_pid" ] && echo "$terminal_pid" > "$STATE_DIR/${session_id}.pid"
+    # 捕获前台窗口位置（用于点击通知时定位到具体窗口）
+    local win_pos; win_pos=$(capture_window_pos)
+    [ -n "$win_pos" ] && echo "$win_pos" > "$STATE_DIR/${session_id}.winpos"
     # 捕获 user_prompt 摘要（截取前 40 字符，去换行）
     local prompt; prompt=$(json_get user_prompt)
     if [ -n "$prompt" ]; then
@@ -110,9 +109,9 @@ handle_stop() {
     else
         subtitle="done · ${duration}"
     fi
-    local terminal_pid; terminal_pid=$(cat "$STATE_DIR/${session_id}.pid" 2>/dev/null)
-    send_notification "$title" "$subtitle" "$bundle_id" "$terminal_pid"
-    rm -f "$start_file" "$STATE_DIR/${session_id}.prompt" "$STATE_DIR/${session_id}.pid"
+    local win_pos; win_pos=$(cat "$STATE_DIR/${session_id}.winpos" 2>/dev/null)
+    send_notification "$title" "$subtitle" "$bundle_id" "$win_pos"
+    rm -f "$start_file" "$STATE_DIR/${session_id}.prompt" "$STATE_DIR/${session_id}.winpos"
 }
 
 # ─── Hook: Notification ───
@@ -132,8 +131,8 @@ handle_notification() {
     local title; title=$(basename "${cwd:-Claude}")
     local prompt_ctx; prompt_ctx=$(cat "$STATE_DIR/${session_id}.prompt" 2>/dev/null)
     [ -n "$prompt_ctx" ] && subtitle="${prompt_ctx}... · ${subtitle}"
-    local terminal_pid; terminal_pid=$(cat "$STATE_DIR/${session_id}.pid" 2>/dev/null)
-    send_notification "$title" "$subtitle" "$bundle_id" "$terminal_pid"
+    local win_pos; win_pos=$(cat "$STATE_DIR/${session_id}.winpos" 2>/dev/null)
+    send_notification "$title" "$subtitle" "$bundle_id" "$win_pos"
 }
 
 # ─── 主入口 ───
