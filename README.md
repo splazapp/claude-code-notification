@@ -139,36 +139,56 @@ To also remove the notification permission: **System Settings → Notifications 
 
 > **Requirements:** Windows 10 version 1809 (build 17763) or later, PowerShell 5.1+, Node.js (included with Claude Code)
 
-### Step 1: Clone the repository
+### Option A: One-Line Install
+
+```powershell
+irm https://raw.githubusercontent.com/splazapp/claude-code-notification/main/windows/install-remote.ps1 | iex
+```
+
+No need to clone the repository. Downloads the latest release and configures everything automatically.
+
+<details>
+<summary>Review the script before running</summary>
+
+```powershell
+irm https://raw.githubusercontent.com/splazapp/claude-code-notification/main/windows/install-remote.ps1 | more
+# Then run it if you're satisfied:
+irm https://raw.githubusercontent.com/splazapp/claude-code-notification/main/windows/install-remote.ps1 | iex
+```
+</details>
+
+To install a specific version:
+
+```powershell
+$env:VERSION="v2.3.0"; irm https://raw.githubusercontent.com/splazapp/claude-code-notification/main/windows/install-remote.ps1 | iex
+```
+
+### Option B: Clone + Install
 
 ```powershell
 git clone https://github.com/splazapp/claude-code-notification.git
 cd claude-code-notification\windows
-```
-
-### Step 2: Install (build from source)
-
-```powershell
 .\install.ps1
 ```
 
-The installer will:
-- Build `claudecode-notification.exe` from C# source (requires [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0))
-- Copy files to `%APPDATA%\claudecode-notification\`
-- Register the Toast AUMID in the registry
-- Configure hooks in `%USERPROFILE%\.claude\settings.json`
+The installer will automatically download the prebuilt exe from GitHub Releases. If the download fails, it falls back to building from source (requires [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)).
 
-### Step 2 (alternative): Build separately, then install
+To install a specific version:
 
 ```powershell
-# Build first (requires .NET 8 SDK)
-.\build.ps1
+$env:VERSION="v2.3.0"; .\install.ps1
+```
 
-# Then install (no SDK required at install time)
+### Option C: Build from Source
+
+```powershell
+git clone https://github.com/splazapp/claude-code-notification.git
+cd claude-code-notification\windows
+.\build.ps1    # requires .NET 8 SDK
 .\install.ps1
 ```
 
-### Step 3: Enable notifications
+### Enable notifications
 
 On first notification, Windows may prompt to allow notifications. If none appear:
 
@@ -228,6 +248,8 @@ Other apps are supported if they set the `__CFBundleIdentifier` environment vari
 
 ```
 claude-code-notification/
+├── .github/workflows/
+│   └── release.yml                  # CI: build + upload exe/zip on tag push
 ├── macos/
 │   ├── claudecode-notification.sh   # Bash hook handler — routes events, tracks state
 │   ├── notifier.swift               # Swift notification sender with click callback
@@ -244,7 +266,8 @@ claude-code-notification/
     ├── Notifier.cs                  # C# Toast notification sender with HWND focus
     ├── Notifier.csproj              # .NET 8 project file
     ├── build.ps1                    # Build script (dotnet publish → single exe)
-    ├── install.ps1                  # Install script
+    ├── install.ps1                  # Install script (auto-downloads exe from Releases)
+    ├── install-remote.ps1           # Remote one-line installer — irm | iex
     ├── uninstall.ps1                # Uninstall script
     └── dist/                        # Build output (gitignored)
         └── claudecode-notification.exe
@@ -261,7 +284,7 @@ claude-code-notification/
 - Windows 10 version 1809 (build 17763) or later
 - PowerShell 5.1+ (pre-installed on Windows 10)
 - Node.js (included with Claude Code)
-- [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0) (only needed to build from source)
+- [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0) (only needed to build from source; prebuilt exe is downloaded automatically)
 
 ## License
 
@@ -383,36 +406,56 @@ bash uninstall.sh
 
 > **系统要求：** Windows 10 1809（build 17763）及以上，PowerShell 5.1+，Node.js（Claude Code 已包含）
 
-### 第一步：Clone 仓库
+### 方式 A：一键安装
+
+```powershell
+irm https://raw.githubusercontent.com/splazapp/claude-code-notification/main/windows/install-remote.ps1 | iex
+```
+
+无需 clone 仓库。自动下载最新版本并完成全部配置。
+
+<details>
+<summary>运行前先审查脚本</summary>
+
+```powershell
+irm https://raw.githubusercontent.com/splazapp/claude-code-notification/main/windows/install-remote.ps1 | more
+# 确认没问题后再执行：
+irm https://raw.githubusercontent.com/splazapp/claude-code-notification/main/windows/install-remote.ps1 | iex
+```
+</details>
+
+指定版本安装：
+
+```powershell
+$env:VERSION="v2.3.0"; irm https://raw.githubusercontent.com/splazapp/claude-code-notification/main/windows/install-remote.ps1 | iex
+```
+
+### 方式 B：Clone + 安装
 
 ```powershell
 git clone https://github.com/splazapp/claude-code-notification.git
 cd claude-code-notification\windows
-```
-
-### 第二步：安装
-
-```powershell
 .\install.ps1
 ```
 
-安装脚本会自动：
-- 从 C# 源码编译 `claudecode-notification.exe`（需要 [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)）
-- 复制文件到 `%APPDATA%\claudecode-notification\`
-- 注册 Toast AUMID 到注册表
-- 配置 `%USERPROFILE%\.claude\settings.json` 中的 hooks
+安装脚本会自动从 GitHub Releases 下载预编译 exe。下载失败时回退到源码编译（需要 [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)）。
 
-### 第二步（进阶）：先构建再安装
+指定版本安装：
 
 ```powershell
-# 先构建（需要 .NET 8 SDK）
-.\build.ps1
+$env:VERSION="v2.3.0"; .\install.ps1
+```
 
-# 再安装（安装时不需要 SDK）
+### 方式 C：从源码编译
+
+```powershell
+git clone https://github.com/splazapp/claude-code-notification.git
+cd claude-code-notification\windows
+.\build.ps1    # 需要 .NET 8 SDK
 .\install.ps1
 ```
 
-### 第三步：允许通知
+### 允许通知
 
 首次收到通知时 Windows 可能弹出权限请求。若通知未出现：
 

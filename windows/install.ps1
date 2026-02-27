@@ -25,11 +25,40 @@ foreach ($candidate in @(
 }
 
 if (-not $ExePath) {
-    Write-Host "No prebuilt claudecode-notification.exe found. Building from source ..."
+    # ─── 尝试从 GitHub Releases 下载 ───
+    $Repo     = "splazapp/claude-code-notification"
+    $ExeName  = "claudecode-notification.exe"
+    $ReleaseTag = if ($env:VERSION) { $env:VERSION } else { "latest" }
+
+    if ($ReleaseTag -eq "latest") {
+        $DownloadUrl = "https://github.com/$Repo/releases/latest/download/$ExeName"
+    } else {
+        $DownloadUrl = "https://github.com/$Repo/releases/download/$ReleaseTag/$ExeName"
+    }
+
+    $DistDir = Join-Path $ScriptDir "dist"
+    New-Item -ItemType Directory -Force -Path $DistDir | Out-Null
+    $DownloadDest = Join-Path $DistDir $ExeName
+
+    try {
+        Write-Host "Downloading $ExeName from GitHub Releases ..."
+        Invoke-WebRequest -Uri $DownloadUrl -OutFile $DownloadDest -UseBasicParsing
+        $ExePath = $DownloadDest
+        Write-Host "    Downloaded successfully."
+    } catch {
+        Write-Host "    Download failed: $_" -ForegroundColor Yellow
+        Write-Host ""
+    }
+}
+
+if (-not $ExePath) {
+    # ─── 回退到源码编译 ───
+    Write-Host "No prebuilt exe found. Building from source ..."
     Write-Host ""
     if (-not (Get-Command dotnet -ErrorAction SilentlyContinue)) {
-        Write-Host "Error: .NET SDK required." -ForegroundColor Red
-        Write-Host "Install from: https://dotnet.microsoft.com/download/dotnet/8.0" -ForegroundColor Yellow
+        Write-Host "Error: .NET SDK not found and download failed." -ForegroundColor Red
+        Write-Host "Either check your network or install .NET 8 SDK:" -ForegroundColor Yellow
+        Write-Host "  https://dotnet.microsoft.com/download/dotnet/8.0" -ForegroundColor Yellow
         exit 1
     }
     & (Join-Path $ScriptDir "build.ps1")
@@ -71,10 +100,12 @@ if (-not (Test-Path $SettingsFile)) { '{}' | Set-Content $SettingsFile -Encoding
 $HookScript = Join-Path $InstallDir "claudecode-notification.ps1"
 
 # Node.js 在安装了 Claude Code 的系统上一定存在
-$jsCode = @"
+# 写入临时 JS 文件再执行，避免 node -e 的引号转义问题
+$TmpJs = Join-Path $env:TEMP "claudecode-notification-setup.js"
+@'
 const fs = require('fs');
-const settingsPath = process.argv[1];
-const hookScript   = process.argv[2];
+const settingsPath = process.argv[2];
+const hookScript   = process.argv[3];
 const psPrefix     = 'powershell.exe -ExecutionPolicy Bypass -NonInteractive -File';
 
 let settings = {};
@@ -94,9 +125,10 @@ for (const event of ['UserPromptSubmit', 'Stop', 'Notification']) {
 
 fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2) + '\n', 'utf8');
 console.log('    settings.json updated.');
-"@
+'@ | Set-Content $TmpJs -Encoding UTF8
 
-node -e $jsCode $SettingsFile $HookScript
+node $TmpJs $SettingsFile $HookScript
+Remove-Item $TmpJs -Force -ErrorAction SilentlyContinue
 
 Write-Host ""
 Write-Host "==> Installation complete!" -ForegroundColor Green
