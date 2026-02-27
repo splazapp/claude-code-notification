@@ -130,7 +130,15 @@ if $DO_NOTARIZE; then
     ZIP_PATH="$DIST_DIR/$APP_NAME.zip"
     ditto -c -k --keepParent "$APP_DIR" "$ZIP_PATH"
     echo "==> Submitting for notarization …"
-    xcrun notarytool submit "$ZIP_PATH" --keychain-profile "notarytool" --wait
+    if [ -n "${NOTARIZE_APPLE_ID:-}" ]; then
+        xcrun notarytool submit "$ZIP_PATH" \
+            --apple-id "$NOTARIZE_APPLE_ID" \
+            --password "$NOTARIZE_APPLE_ID_PASSWORD" \
+            --team-id  "$NOTARIZE_TEAM_ID" \
+            --wait
+    else
+        xcrun notarytool submit "$ZIP_PATH" --keychain-profile "notarytool" --wait
+    fi
     echo "==> Stapling …"
     xcrun stapler staple "$APP_DIR"
     # Re-create zip with stapled app

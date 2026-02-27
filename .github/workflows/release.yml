@@ -17,7 +17,6 @@ jobs:
             build_script: windows/build.ps1
             artifact: windows/dist/claudecode-notification.exe
           - os: macos-latest
-            build_script: macos/build.sh
             artifact: macos/dist/ClaudeCodeNotification.zip
 
     runs-on: ${{ matrix.os }}
@@ -37,9 +36,33 @@ jobs:
         shell: pwsh
         run: .\${{ matrix.build_script }}
 
-      - name: Build (macOS)
+      # ─── macOS：导入证书 + Developer ID 签名 + 公证 ───
+      - name: Import signing certificate
         if: runner.os == 'macOS'
-        run: bash ${{ matrix.build_script }}
+        env:
+          MACOS_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
+          MACOS_CERTIFICATE_PWD: ${{ secrets.MACOS_CERTIFICATE_PWD }}
+        run: |
+          echo "$MACOS_CERTIFICATE" | base64 --decode > /tmp/cert.p12
+          security create-keychain -p "" build.keychain
+          security default-keychain -s build.keychain
+          security unlock-keychain -p "" build.keychain
+          security import /tmp/cert.p12 -k build.keychain \
+            -P "$MACOS_CERTIFICATE_PWD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple: -s -k "" build.keychain
+          rm /tmp/cert.p12
+
+      - name: Build and notarize (macOS)
+        if: runner.os == 'macOS'
+        env:
+          NOTARIZE_APPLE_ID: ${{ secrets.NOTARIZE_APPLE_ID }}
+          NOTARIZE_APPLE_ID_PASSWORD: ${{ secrets.NOTARIZE_APPLE_ID_PASSWORD }}
+          NOTARIZE_TEAM_ID: ${{ secrets.NOTARIZE_TEAM_ID }}
+        run: |
+          SIGN_IDENTITY=$(security find-identity -v -p codesigning build.keychain \
+            | grep 'Developer ID Application' | head -1 \
+            | sed -E 's/.*"(Developer ID Application: [^"]+)".*/\1/')
+          bash macos/build.sh --sign "$SIGN_IDENTITY" --notarize
 
       - name: Upload to GitHub Release
         uses: softprops/action-gh-release@v2
